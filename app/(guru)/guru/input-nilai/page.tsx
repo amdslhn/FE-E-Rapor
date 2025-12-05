@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic"
 export const fetchCache = "force-no-store"
 
 import type React from "react"
-import { useEffect, useState, useMemo } from "react"
-import { useSearchParams } from "next/navigation" // Import SearchParams
+import { useEffect, useState, useMemo, Suspense } from "react" // Tambah Suspense
+import { useSearchParams } from "next/navigation" 
 import { ProtectedRoute } from "@/components/protected-route"
 import { Navbar } from "@/components/layout/navbar"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -19,8 +19,9 @@ import {
   School, BookOpen, User, Hash 
 } from "lucide-react"
 
-export default function InputNilai() {
-  const searchParams = useSearchParams() // Baca URL Params
+// --- 1. PINDAHKAN LOGIKA UTAMA KE SINI ---
+function InputNilaiContent() {
+  const searchParams = useSearchParams() 
   
   // State Data Master
   const [rawSchedule, setRawSchedule] = useState<any[]>([]) 
@@ -42,7 +43,7 @@ export default function InputNilai() {
   const [semester, setSemester] = useState("1")
   const [nilai, setNilai] = useState<string>("")
 
-  // --- 1. FETCH DATA ---
+  // --- FETCH DATA ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -100,10 +101,9 @@ export default function InputNilai() {
     }
 
     fetchData()
-  }, [searchParams]) // Re-run jika URL params berubah
+  }, [searchParams])
 
-  // --- 2. LOGIKA FILTERING ---
-
+  // --- LOGIKA FILTERING ---
   const listKelasUnik = useMemo(() => {
     const uniqueKelas = new Map()
     rawSchedule.forEach(item => {
@@ -131,8 +131,7 @@ export default function InputNilai() {
     (siswa) => !selectedKelas || String(siswa.kelas_id) === String(selectedKelas)
   )
 
-  // --- 3. HELPER & SUBMIT ---
-  
+  // --- HELPER & SUBMIT ---
   const showSuccessPopup = (msg: string) => {
     setSuccessMessage(msg)
     setShowSuccessModal(true)
@@ -167,8 +166,7 @@ export default function InputNilai() {
       )
 
       showSuccessPopup("Nilai berhasil disimpan!")
-      setNilai("") // Reset nilai
-      // setSelectedSiswa("") // Opsional: Reset siswa jika mau input beruntun satu kelas
+      setNilai("") 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan nilai")
     } finally {
@@ -205,7 +203,7 @@ export default function InputNilai() {
               </div>
             ) : (
               <div className="max-w-3xl mx-auto mt-4">
-                 <Card className="mb-8 border-none shadow-xl bg-white overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+                  <Card className="mb-8 border-none shadow-xl bg-white overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
                     
                     {/* Card Header */}
                     <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4 flex items-center gap-2">
@@ -301,7 +299,7 @@ export default function InputNilai() {
                                   onChange={(e) => {
                                     const val = e.target.value
                                     if (val === "" || (Number(val) >= 0 && Number(val) <= 100)) {
-                                        setNilai(val)
+                                       setNilai(val)
                                     }
                                   }}
                                   placeholder="0"
@@ -348,12 +346,12 @@ export default function InputNilai() {
 
                        </form>
                     </div>
-                 </Card>
+                  </Card>
 
-                 {/* Tips Section */}
-                 <div className="text-center text-xs text-slate-400">
-                    <p>Pastikan data yang dipilih sudah benar sebelum menyimpan.</p>
-                 </div>
+                  {/* Tips Section */}
+                  <div className="text-center text-xs text-slate-400">
+                     <p>Pastikan data yang dipilih sudah benar sebelum menyimpan.</p>
+                  </div>
               </div>
             )}
 
@@ -377,5 +375,21 @@ export default function InputNilai() {
         </div>
       </div>
     </ProtectedRoute>
+  )
+}
+
+// --- 2. BUNGKUS DENGAN SUSPENSE UNTUK EXPORT DEFAULT ---
+export default function InputNilai() {
+  return (
+    <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+           <div className="flex flex-col items-center gap-2">
+             <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+             <p className="text-slate-500 font-medium text-sm">Memuat Halaman...</p>
+           </div>
+        </div>
+    }>
+      <InputNilaiContent />
+    </Suspense>
   )
 }
