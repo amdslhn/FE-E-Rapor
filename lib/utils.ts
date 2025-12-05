@@ -6,32 +6,43 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 function toWIB(dateString: any) {
-  if (!dateString || typeof dateString !== "string") return "-";
+  if (!dateString) return "-";
 
+  // 1. Pastikan input menjadi object Date yang valid
   let date: Date;
 
-  // CASE 1: PostgreSQL timestamp "2025-12-02 15:01:08"
-  if (dateString.includes(" ") && !dateString.includes("T")) {
-    const [datePart, timePart] = dateString.split(" ");
-
-    const [year, month, day] = datePart.split("-").map(Number);
-    const [hour, minute, second] = timePart.split(":").map(Number);
-
-    date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  if (typeof dateString === "string") {
+    // CASE 1: Jika format dari DB "2025-12-02 15:01:08" (tanpa T dan Z)
+    // Kita paksa tambahkan "Z" di akhir agar dibaca sebagai UTC, bukan waktu lokal laptop.
+    if (dateString.includes(" ") && !dateString.includes("Z")) {
+       // Ubah spasi jadi T dan tambah Z: "2025-12-02T15:01:08Z"
+       date = new Date(dateString.replace(" ", "T") + "Z");
+    } else {
+       // CASE 2: ISO String standard
+       date = new Date(dateString);
+    }
+  } else if (dateString instanceof Date) {
+      date = dateString;
+  } else {
+      return "-";
   }
 
-  // CASE 2: ISO string "2025-12-02T08:10:11.530Z"
-  else {
-    date = new Date(dateString);
-  }
-
+  // Cek apakah tanggal valid
   if (isNaN(date.getTime())) return "-";
 
-  const wib = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-
-  return wib.toLocaleString("id-ID", { hour12: false });
+  // 2. Format output langsung ke Asia/Jakarta menggunakan Intl API
+  // Ini cara paling aman dan standar di JavaScript modern
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta", // <--- INI KUNCINYA (Otomatis +7)
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false, // Format 24 jam
+  }).format(date).replace(/\./g, ":"); // Ubah pemisah waktu dari titik (.) jadi titik dua (:) biar rapi
 }
-
 
 
 
