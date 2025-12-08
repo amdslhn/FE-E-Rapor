@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
-const TIMEOUT_MS = 30 * 60 * 1000 
+const TIMEOUT_MS = 10 * 60 * 1000 
 
 export function AutoLockTimer() {
   const router = useRouter()
